@@ -231,12 +231,12 @@ def profile():
     form = EditProfileForm()
     if form.validate_on_submit():
         user = ''
-        # logged_in_user = User.query.get_or_404(session[CURR_USER_KEY])
         if form.password.data:
             user = User.authenticate(g.user.username,
                                  form.password.data)
         else:
-            user = User.query.get(session[CURR_USER_KEY])
+            flash("Access unauthorized", "danger")
+            return redirect('/')
 
         if user:
             if form.username.data:

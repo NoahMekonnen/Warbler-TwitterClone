@@ -231,7 +231,7 @@ class UserViewsTestCase(TestCase):
 
             resp = (client.post('/users/profile', 
             data=({'username': 'test4', 'bio': "the tester", "password":"HASHED_PASSWORD",
-            "email":"test1@test.com", "header_image_url": "a.png", "image_url": "a.png"}), 
+            "email":"test1@test.com"}), 
             follow_redirects=True))
 
             html = resp.get_data(as_text=True)
