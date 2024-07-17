@@ -38,7 +38,7 @@ class MessageViewTestCase(TestCase):
     """Test views for messages."""
 
     def setUp(self):
-        """Create test client, add sample data."""
+        """Add sample data."""
 
         User.query.delete()
         db.session.commit()
@@ -62,15 +62,10 @@ class MessageViewTestCase(TestCase):
     def test_messages_add(self):
         """Can add a message?"""
 
-        # Since we need to change the session to mimic logging in,
-        # we need to use the changing-session trick:
-        "A user who is logged in can make a new message"
+        "Post /messages/new and Logged in"
         with app.test_client() as c:
             with c.session_transaction() as sess:
                 sess[CURR_USER_KEY] = self.u1.id
-
-            # Now, that session setting is saved, so we can have
-            # the rest of ours test
 
             resp = c.post("/messages/new", data={"text": "Hello"})
             html = resp.get_data(as_text=True)
@@ -88,7 +83,7 @@ class MessageViewTestCase(TestCase):
             self.assertEqual(resp.status_code, 302)
             self.assertFalse(msg.id in [message.id for message in Message.query.all()])
 
-        "Someone who is not logged in cannot make a new message"
+        "Post /messages/new and Not logged in"
         with app.test_client() as c:
             resp = c.post('/messages/new', data={"text": 'Hello2' }, follow_redirects=True)
             html = resp.get_data(as_text=True)
@@ -97,7 +92,7 @@ class MessageViewTestCase(TestCase):
             self.assertNotIn('Hello2', html)
             self.assertIn('Access unauthorized', html)
 
-        "Get / and Not logged in"
+        "Get /messages/new and Not logged in"
         with app.test_client() as c:
             resp = c.get('/messages/new', follow_redirects=True)
             html = resp.get_data(as_text=True)
@@ -105,7 +100,7 @@ class MessageViewTestCase(TestCase):
             self.assertEqual(resp.status_code, 200)
             self.assertIn("Access unauthorized", html)
 
-        "Get / and logged in"
+        "Get /messages/new and logged in"
         with app.test_client() as c:
             with c.session_transaction() as sess:
                 sess[CURR_USER_KEY] = self.u1.id
@@ -117,7 +112,9 @@ class MessageViewTestCase(TestCase):
             self.assertIn("Add my message", html)
 
     def test_messages_show(self):
-        # Not logged in
+        """Can show message?"""
+
+        "GET /messages/<int:message_id> and Not logged in"
         with app.test_client() as c:
             resp = c.get(f'/messages/{self.msg1.id}')
             html = resp.get_data(as_text=True)
@@ -126,7 +123,7 @@ class MessageViewTestCase(TestCase):
             self.assertNotIn("Delete", html)
             self.assertIn("Blessed Trinity", html)
 
-        # Logged in
+        "GET /messages/<int:message_id> and Logged in"
         with app.test_client() as c:
             with c.session_transaction() as sess:
                 sess[CURR_USER_KEY] = self.u1.id
@@ -139,7 +136,7 @@ class MessageViewTestCase(TestCase):
             self.assertIn("Blessed Trinity", html)
 
     def test_messages_destroy(self):
-        # Not logged in
+        """Can delete message?"""
         with app.test_client() as c:
             resp = c.post(f'/messages/{self.msg1.id}/delete', follow_redirects=True)
             html = resp.get_data(as_text=True)
@@ -147,13 +144,12 @@ class MessageViewTestCase(TestCase):
             self.assertEqual(resp.status_code, 200)
             self.assertIn("Access unauthorized", html)
 
-        # Logged in
+        "POST /messages/<int:message_id>/delete and logged in"
         u1 = User.query.filter_by(username='test1').first()
         with app.test_client() as c:
             with c.session_transaction() as sess:
                 sess[CURR_USER_KEY] = u1.id
 
-            # msg1 = Message.query.filter_by(text="Blessed Trinity")
             resp = c.post(f'/messages/{self.msg1.id}/delete', follow_redirects=True)
             html = resp.get_data(as_text=True)
             messages = Message.query.all()
@@ -164,7 +160,7 @@ class MessageViewTestCase(TestCase):
             self.assertIn("Messages", html)
             self.assertIn("Likes", html)
 
-        # Deleting message for another user while logged in
+        "POST /messages/<int:message_id>/delete and not logged in"
         msg2 = Message.query.filter_by(text="Trust in God").first()
         with app.test_client() as c:
             with c.session_transaction() as sess:

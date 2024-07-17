@@ -19,6 +19,7 @@ db.create_all()
 class UserViewsTestCase(TestCase):
 
     def setUp(self):
+        """Add Sample data"""
 
         User.query.delete()
         Message.query.delete()
@@ -52,7 +53,7 @@ class UserViewsTestCase(TestCase):
         self.u2 = u2
 
     def test_list_users(self):
-        """Test /users route"""
+        """Test GET /users route"""
 
         with app.test_client() as client:
             resp = client.get('/users')
@@ -62,7 +63,7 @@ class UserViewsTestCase(TestCase):
             self.assertIn('@test1', html)
 
     def test_users_show(self):
-        """Test /users/<int:user_id> route"""
+        """Test GET /users/<int:user_id> route"""
 
         "-Not logged in"
         with app.test_client() as client:
@@ -84,7 +85,7 @@ class UserViewsTestCase(TestCase):
             self.assertIn('<p>Blessed Trinity</p>',html)
         
     def test_show_liked_messages(self):
-        """Test users/liked"""
+        """Test GET /users/liked"""
 
         "-Not logged in"
         with app.test_client() as client:
@@ -107,9 +108,11 @@ class UserViewsTestCase(TestCase):
             self.assertIn('Detail', html)
             
     def test_show_following(self):
+        """Test GET /users/<int:user_id>/following"""
+
         user = User.query.filter_by(username="test1").first()
 
-        # Not Logged in
+        "-Not Logged in"
         with app.test_client() as client:
             resp = client.get(f'/users/{self.u1.id}/following', follow_redirects=True)
             html = resp.get_data(as_text=True)
@@ -117,7 +120,7 @@ class UserViewsTestCase(TestCase):
             self.assertEqual(resp.status_code, 200)
             self.assertIn("Access unauthorized", html)   
 
-        # Logged in
+        "-Logged in"
         with app.test_client() as client:
             with client.session_transaction() as change_session:
                 change_session[CURR_USER_KEY] = self.u1.id
@@ -129,7 +132,9 @@ class UserViewsTestCase(TestCase):
             self.assertIn('@test2', html)
 
     def test_users_followers(self):
-        # Not logged in
+        """Test GET /users/<int:user_id>/followers"""
+
+        "-Not logged in"
         with app.test_client() as client:
             resp = client.get(f'/users/{self.u1.id}/followers', follow_redirects=True)
             html = resp.get_data(as_text=True)
@@ -137,7 +142,7 @@ class UserViewsTestCase(TestCase):
             self.assertEqual(resp.status_code, 200)
             self.assertIn('Access unauthorized', html)
 
-        # Logged in
+        "-Logged in"
         with app.test_client() as client:
             with client.session_transaction() as change_session:
                 change_session[CURR_USER_KEY] = self.u1.id
@@ -149,7 +154,9 @@ class UserViewsTestCase(TestCase):
             self.assertIn('@test2', html)
 
     def test_add_follow(self):
-        # Not logged in
+        """Test POST /users/follow/<int:follow_id>"""
+
+        "-Not logged in"
         with app.test_client() as client:
             resp = client.post(f'/users/follow/{self.u1.id}', follow_redirects=True)
             html = resp.get_data(as_text=True)
@@ -157,7 +164,7 @@ class UserViewsTestCase(TestCase):
             self.assertEqual(resp.status_code, 200)
             self.assertIn("Access unauthorized", html)
 
-        #Logged in
+        "-Logged in"
         u3 = User.query.filter_by(username='test3').first()
         with app.test_client() as client:
             with client.session_transaction() as change_session:
@@ -172,8 +179,9 @@ class UserViewsTestCase(TestCase):
             self.assertEqual(len(user.following), 2)
 
     def test_stop_following(self):
+        """Test POST /users/stop-following/<int:follow_id>"""
 
-        # Not logged in
+        "-Not logged in"
         with app.test_client() as client:
             resp = client.post(f'/users/stop-following/{self.u1.id}', follow_redirects=True)
             html = resp.get_data(as_text=True)
@@ -181,7 +189,7 @@ class UserViewsTestCase(TestCase):
             self.assertEqual(resp.status_code, 200)
             self.assertIn("Access unauthorized", html)
             
-        # Logged in
+        "-Logged in"
         u2 = User.query.filter_by(username='test2').first()
         with app.test_client() as client:
             with client.session_transaction() as change_session:
@@ -196,7 +204,8 @@ class UserViewsTestCase(TestCase):
             self.assertEqual(len(u1.following), 0)
 
     def test_profile(self):
-        # Get/ Not Logged in
+        """Test /users/profile"""
+        "GET/ Not Logged in"
         with app.test_client() as client:
             resp = client.get('/users/profile', follow_redirects=True)
             html = resp.get_data(as_text=True)
@@ -204,7 +213,7 @@ class UserViewsTestCase(TestCase):
             self.assertEqual(resp.status_code, 200)
             self.assertIn("Access unauthorized", html)
 
-        # Get/ Logged in
+        "GET/ Logged in"
         u1 = User.query.filter_by(username="test1").first()
         with app.test_client() as client:
             with client.session_transaction() as change_session:
@@ -216,7 +225,7 @@ class UserViewsTestCase(TestCase):
             self.assertEqual(resp.status_code, 200)
             self.assertIn("Edit Profile", html)
 
-        # Post/ Not Logged in
+        "POST/ Not Logged in"
         with app.test_client() as client:
             resp = client.get('/users/profile', follow_redirects=True)
             html = resp.get_data(as_text=True)
@@ -224,7 +233,7 @@ class UserViewsTestCase(TestCase):
             self.assertEqual(resp.status_code, 200)
             self.assertIn("Access unauthorized", html)
 
-        # Post/ Logged in
+        "POST/ Logged in"
         with app.test_client() as client:
             with client.session_transaction() as change_session:
                 change_session[CURR_USER_KEY] = u1.id
@@ -241,25 +250,28 @@ class UserViewsTestCase(TestCase):
             self.assertIn("@test4", html)
             self.assertIn("the tester", html)
 
-        def test_delete_user(self):
-            # Not logged in
-            with app.test_client() as client:
-                resp = client.post('/users/delete')
-                html = resp.get_data(as_text=True)
+    def test_delete_user(self):
+        """Test POST /users/delete"""
 
-                self.assertEqual(resp.status_code, 200)
-                self.assertIn("Access unauthorized", html)
+        u1 = User.query.filter_by(username="test1").first()
+        "-Not logged in"
+        with app.test_client() as client:
+            resp = client.post('/users/delete', follow_redirects=True)
+            html = resp.get_data(as_text=True)
 
-            # Logged in
-            with app.test_client() as client:
-                with client.session_transaction() as change_session:
-                    change_session[CURR_USER_KEY] = self.u1.id
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn("Access unauthorized", html)
+
+        "-Logged in"
+        with app.test_client() as client:
+            with client.session_transaction() as change_session:
+                change_session[CURR_USER_KEY] = u1.id
                 
-                resp = client.post('/users/delete')
-                html = resp.get_data(as_text=True)
+            resp = client.post('/users/delete', follow_redirects=True)
+            html = resp.get_data(as_text=True)
 
-                self.assertEqual(resp.status_code, 200)
-                self.assertIn("Sign me up", html)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn("Sign me up", html)
 
     
 

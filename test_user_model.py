@@ -11,12 +11,6 @@ from unittest import TestCase
 from models import db, User, Message, Follows, Likes
 from flask_bcrypt import Bcrypt
 
-
-# BEFORE we import our app, let's set an environmental variable
-# to use a different database for tests (we need to do this
-# before we import our app, since that will have already
-# connected to the database
-
 os.environ['DATABASE_URL'] = "postgresql:///warbler-test"
 bcrypt = Bcrypt()
 
@@ -36,7 +30,7 @@ class UserModelTestCase(TestCase):
     """Test views for messages."""
 
     def setUp(self):
-        """Create test client, add sample data."""
+        """Add sample data."""
 
         User.query.delete()
         Message.query.delete()
@@ -124,10 +118,6 @@ class UserModelTestCase(TestCase):
         self.assertEqual(u3.username, 'testuser3')
         self.assertEqual(u3.email, 'test3@test.com')
         self.assertTrue(bcrypt.check_password_hash(u3.password, 'HASHED_PASSWORD'))
-        
-        #Cannot make a user when email is not unique
-        # with self.assertRaises(IntegrityError):
-        #     User.signup('testuser4', 'test3@test.com', 'HASHED_PASSWORD','')
 
         #check that password must be non-empty
         with self.assertRaises(ValueError):
