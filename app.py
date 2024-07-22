@@ -15,7 +15,7 @@ app = Flask(__name__)
 # Get DB_URI from environ variable (useful for production/testing) or,
 # if not set there, use development local db.
 app.config['SQLALCHEMY_DATABASE_URI'] = (
-    os.environ.get('DATABASE_URL', 'postgresql://piimpksg:5qCClK0mXPtZuHBEFO1vZoOd16LL8GaG@kala.db.elephantsql.com/piimpksg'))
+    os.environ.get('DATABASE_URL', 'postgresql:///warbler'))
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = False
@@ -28,7 +28,6 @@ connect_db(app)
 
 ##############################################################################
 # User signup/login/logout
-
 
 @app.before_request
 def add_user_to_g():
